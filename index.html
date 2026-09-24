@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIMS Admin - ভূমি ব্যবস্থাপনা পোর্টাল</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Bengali Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans Bengali', 'SolaimanLipi', 'Kalpurush', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', sans-serif;
+            background-color: #f8fafc;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .submenu-transition {
+            transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out;
+            overflow: hidden;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-toast {
+            animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+
+    <!-- Firebase Modular SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            doc, 
+            onSnapshot,
+            query,
+            orderBy 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDAALyJx9G1JMicmckIubaJ0X0REOEzvFg",
+            authDomain: "lims-52f6e.firebaseapp.com",
+            projectId: "lims-52f6e",
+            storageBucket: "lims-52f6e.firebasestorage.app",
+            messagingSenderId: "52005312667",
+            appId: "1:52005312667:web:8a438bac8ee535935d0e3e",
+            measurementId: "G-RF5HTYK987"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Expose Firebase services globally for UI interactions
+        window.firebaseServices = {
+            auth,
+            db,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            collection,
+            addDoc,
+            updateDoc,
+            deleteDoc,
+            doc,
+            onSnapshot,
+            query,
+            orderBy
+        };
+    </script>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- LOGIN SCREEN VIEW -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black">
+        <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 max-w-md w-full overflow-hidden p-8 sm:p-10 transition-all">
+            
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-tr from-brand-600 to-brand-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-brand-500/30">
+                    <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight">LIMS পোর্টাল</h2>
+                <p class="text-xs text-slate-500 mt-1 font-medium">ভূমি তথ্য ব্যবস্থাপনা সিস্টেমে নিরাপদ প্রবেশ</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">ইমেইল ঠিকানা</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                            <i class="fa-regular fa-envelope text-sm"></i>
+                        </span>
+                        <input type="email" id="loginUsername" required autocomplete="off" placeholder="admin@lims.gov.bd" class="w-full pl-10 pr-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-600 transition font-medium text-slate-800">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </span>
+                        <input type="password" id="loginPassword" required autocomplete="off" placeholder="••••••••" class="w-full pl-10 pr-10 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-600 transition font-medium text-slate-800">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 focus:outline-none">
+                            <i id="togglePasswordIcon" class="fa-regular fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="loginError" class="hidden text-xs text-red-600 bg-red-50 p-3 rounded-xl border border-red-200 text-center font-semibold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="loginErrorText">সঠিক ইমেইল ও পাসওয়ার্ড প্রদান করুন।</span>
+                </div>
+
+                <button type="submit" id="loginBtn" class="w-full py-3 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-600/25 active:scale-[0.99]">
+                    লগইন করুন
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+                <p class="text-[11px] text-slate-400 font-medium">LIMS &copy; কপিরাইট সংরক্ষিত</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION WRAPPER -->
+    <div id="appLayout" class="flex h-screen overflow-hidden hidden">
+        
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-64 bg-slate-900 text-slate-300 border-r border-slate-800 flex flex-col transition-all duration-300 z-30 shrink-0">
+            <div class="h-16 flex items-center px-5 border-b border-slate-800 bg-slate-950">
+                <div class="flex items-center space-x-3 text-white font-bold text-xl cursor-pointer" onclick="switchView('lands')">
+                    <div class="p-2 bg-brand-600 rounded-lg text-white shadow-md">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                    </div>
+                    <span class="tracking-tight font-extrabold text-lg sidebar-text">LIMS <span class="text-brand-400 font-semibold">Portal</span></span>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+                <button onclick="switchView('dashboard', this)" class="nav-single w-full flex items-center px-3.5 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-xs font-semibold">
+                    <i class="fa-solid fa-chart-pie w-5 text-slate-400"></i>
+                    <span class="ml-2 sidebar-text">ড্যাশবোর্ড</span>
+                </button>
+
+                <div>
+                    <button onclick="toggleMenu('land-menu', 'land-arrow')" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-xs font-semibold">
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-layer-group w-5 text-slate-400"></i>
+                            <span class="ml-2 sidebar-text">ভূমি ব্যবস্থাপনা</span>
+                        </div>
+                        <i id="land-arrow" class="fa-solid fa-chevron-down text-[10px] text-slate-500 transition-transform duration-200"></i>
+                    </button>
+                    <div id="land-menu" class="pl-6 space-y-1 mt-1 submenu-transition max-h-96 opacity-100">
+                        <button onclick="switchView('lands', this)" class="sub-nav-item active-nav w-full flex items-center px-3 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white">
+                            <span class="mr-2 font-bold">•</span>
+                            <span>ভূমি রেকর্ড</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <button onclick="toggleMenu('office-menu', 'office-arrow')" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-xs font-semibold">
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-building-columns w-5 text-slate-400"></i>
+                            <span class="ml-2 sidebar-text">ইউনিয়ন ভূমি অফিস</span>
+                        </div>
+                        <i id="office-arrow" class="fa-solid fa-chevron-down text-[10px] text-slate-500 transition-transform duration-200"></i>
+                    </button>
+                    <div id="office-menu" class="pl-6 space-y-1 mt-1 submenu-transition max-h-96 opacity-100">
+                        <button onclick="openAddOfficeModal()" class="admin-only sub-nav-item w-full flex items-center px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                            <span class="mr-2 font-bold">+</span>
+                            <span>ভূমি অফিস সংযোজন</span>
+                        </button>
+                        <button onclick="switchView('office-list', this)" class="sub-nav-item w-full flex items-center px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                            <span class="mr-2 font-bold">•</span>
+                            <span>ভূমি অফিস তালিকা</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <button onclick="toggleMenu('mouza-menu', 'mouza-arrow')" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-xs font-semibold">
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-map-location-dot w-5 text-slate-400"></i>
+                            <span class="ml-2 sidebar-text">মৌজা ব্যবস্থাপনা</span>
+                        </div>
+                        <i id="mouza-arrow" class="fa-solid fa-chevron-down text-[10px] text-slate-500 transition-transform duration-200"></i>
+                    </button>
+                    <div id="mouza-menu" class="pl-6 space-y-1 mt-1 submenu-transition max-h-96 opacity-100">
+                        <button onclick="openAddMouzaModal()" class="admin-only sub-nav-item w-full flex items-center px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                            <span class="mr-2 font-bold">+</span>
+                            <span>মৌজা সংযোজন</span>
+                        </button>
+                        <button onclick="switchView('mouza-list', this)" class="sub-nav-item w-full flex items-center px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                            <span class="mr-2 font-bold">•</span>
+                            <span>মৌজা তালিকা</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <button onclick="toggleMenu('settings-menu', 'settings-arrow')" class="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition text-xs font-semibold">
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-sliders w-5 text-slate-400"></i>
+                            <span class="ml-2 sidebar-text">সেটিংস</span>
+                        </div>
+                        <i id="settings-arrow" class="fa-solid fa-chevron-down text-[10px] text-slate-500 transition-transform duration-200"></i>
+                    </button>
+                    <div id="settings-menu" class="pl-6 space-y-1 mt-1 submenu-transition max-h-96 opacity-100">
+                        <button onclick="switchView('land-type-list', this)" class="sub-nav-item w-full flex items-center px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                            <span class="mr-2">•</span>
+                            <span>ভূমির ধরন তালিকা</span>
+                        </button>
+                        <button onclick="switchView('viewer-management', this)" class="sub-nav-item w-full flex items-center px-3 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition">
+                            <span class="mr-2">•</span>
+                            <span>এক্সেস কন্ট্রোল</span>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="p-3 border-t border-slate-800 bg-slate-950">
+                <button onclick="handleLogout()" class="w-full flex items-center justify-center px-3 py-2.5 text-slate-300 bg-slate-800/60 border border-slate-700/60 rounded-xl hover:bg-red-600 hover:text-white hover:border-red-600 transition text-xs font-bold">
+                    <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i>
+                    <span class="sidebar-text">লগ আউট</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+            <header class="h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-6 z-20 shadow-sm">
+                <div class="flex items-center space-x-3">
+                    <button id="toggleSidebar" onclick="toggleSidebarMenu()" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition" title="টগল করুন">
+                        <i class="fa-solid fa-bars-staggered text-base"></i>
+                    </button>
+                    <button onclick="refreshData()" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition" title="রিফ্রেশ করুন">
+                        <i id="refreshIcon" class="fa-solid fa-rotate-right text-sm"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <button onclick="openSupportModal()" class="hidden md:flex items-center text-slate-600 hover:text-brand-600 text-xs font-semibold px-3 py-1.5 bg-slate-100 hover:bg-brand-50 rounded-lg transition border border-slate-200/60">
+                        <i class="fa-regular fa-circle-question mr-1.5 text-slate-500"></i>
+                        <span>সহায়তা কেন্দ্র</span>
+                    </button>
+
+                    <div class="flex items-center border-l border-slate-200 pl-4 space-x-3">
+                        <div class="text-right">
+                            <span id="userRoleBadge" class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-brand-50 text-brand-700 border border-brand-200/80">
+                                সিস্টেম সেশন
+                            </span>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-700 font-bold text-xs">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- VIEW SECTION 1: LAND RECORDS -->
+            <main id="view-lands" class="main-view flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900 tracking-tight">ভূমি রেকর্ডসমূহ</h1>
+                            <p class="text-slate-500 text-xs mt-1 font-medium">নিবন্ধিত জমি ও সংশ্লিষ্ট তথ্যাবলীর কেন্দ্রীয় ডাটাবেজ (Firebase Firestore)</p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="downloadExcelTemplate()" class="px-3.5 py-2 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                                <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                                <span>টেমপ্লেট</span>
+                            </button>
+
+                            <label class="admin-only cursor-pointer px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                                <i class="fa-solid fa-file-import"></i>
+                                <span>ইমপোর্ট</span>
+                                <input type="file" id="excelFileInput" accept=".csv,.xlsx,.xls" onchange="handleExcelImport(event)" class="hidden">
+                            </label>
+
+                            <button onclick="exportToExcel()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                                <i class="fa-solid fa-file-export"></i>
+                                <span>এক্সপোর্ট</span>
+                            </button>
+
+                            <button onclick="openRecordModal('add')" class="admin-only px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-brand-600/20 flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i>
+                                <span>নতুন রেকর্ড</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="relative w-full sm:w-80">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="searchInput" onkeyup="filterRecords()" 
+                                   placeholder="হাল দাগ, খতিয়ান বা মৌজা অনুসন্ধান..." 
+                                   class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition">
+                        </div>
+
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <select id="officeFilter" onchange="filterRecords()" class="w-full sm:w-56 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:border-brand-600 transition">
+                                <option value="ALL">সকল ভূমি অফিস</option>
+                            </select>
+
+                            <select id="typeFilter" onchange="filterRecords()" class="w-full sm:w-40 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:border-brand-600 transition">
+                                <option value="ALL">সকল ধরন</option>
+                                <option value="আপত্তি">আপত্তি</option>
+                                <option value="মামলা চলমান">মামলা চলমান</option>
+                                <option value="খাস">খাস</option>
+                                <option value="ভি পি 'ক'">ভি পি 'ক'</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                                        <th class="py-4 px-4 text-center w-16">ক্রমিক</th>
+                                        <th class="py-4 px-4 text-center">সাবেক দাগ</th>
+                                        <th class="py-4 px-4 text-center">হাল দাগ</th>
+                                        <th class="py-4 px-4 text-center">হাল খতিয়ান</th>
+                                        <th class="py-4 px-4 text-center">মৌজা</th>
+                                        <th class="py-4 px-4 text-center">ইউনিয়ন ভূমি অফিস</th>
+                                        <th class="py-4 px-4 text-center">জমির ধরন</th>
+                                        <th class="py-4 px-6 text-center">অ্যাকশন</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody" class="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="emptyState" class="hidden py-16 text-center">
+                            <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                <i class="fa-solid fa-folder-open text-xl"></i>
+                            </div>
+                            <h3 class="text-slate-800 font-bold text-sm">কোনো তথ্য পাওয়া যায়নি</h3>
+                            <p class="text-slate-400 text-xs mt-1">অনুগ্রহ করে ফিল্টার পরিবর্তন বা পুনরায় চেষ্টা করুন।</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW SECTION 2: LAND OFFICE LIST -->
+            <main id="view-office-list" class="main-view hidden flex-1 overflow-y-auto p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900">ইউনিয়ন ভূমি অফিস তালিকা</h1>
+                            <p class="text-slate-500 text-xs mt-1">নিবন্ধিত সকল ইউনিয়ন ভূমি অফিসের তালিকা</p>
+                        </div>
+                        <button onclick="openAddOfficeModal()" class="admin-only px-4 py-2 bg-brand-600 text-white text-xs font-bold rounded-xl hover:bg-brand-700 transition shadow-sm">
+                            + নতুন অফিস যোগ করুন
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                        <ul id="officeListUI" class="divide-y divide-slate-100 text-xs font-semibold">
+                        </ul>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW SECTION 3: MOUZA LIST -->
+            <main id="view-mouza-list" class="main-view hidden flex-1 overflow-y-auto p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900">মৌজা তালিকা</h1>
+                            <p class="text-slate-500 text-xs mt-1">সিস্টেমে নিবন্ধিত সকল মৌজা</p>
+                        </div>
+                        <button onclick="openAddMouzaModal()" class="admin-only px-4 py-2 bg-brand-600 text-white text-xs font-bold rounded-xl hover:bg-brand-700 transition shadow-sm">
+                            + নতুন মৌজা যোগ করুন
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                        <ul id="mouzaListUI" class="divide-y divide-slate-100 text-xs font-semibold">
+                        </ul>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW SECTION 4: LAND TYPE LIST -->
+            <main id="view-land-type-list" class="main-view hidden flex-1 overflow-y-auto p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <h1 class="text-2xl font-black text-slate-900">ভূমির ধরন শ্রেনীবিভাগ</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                            <span class="text-red-600 font-extrabold block text-sm mb-1">আপত্তি</span>
+                            <p class="text-xs text-slate-500 font-medium">স্বত্ব বা সীমানা সংক্রান্ত আপত্তিযুক্ত রেকর্ড।</p>
+                        </div>
+                        <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                            <span class="text-red-700 font-extrabold block text-sm mb-1">মামলা চলমান</span>
+                            <p class="text-xs text-slate-500 font-medium">আইনি ট্রাইব্যুনাল বা আদালতে প্রক্রিয়াধীন ভূমি।</p>
+                        </div>
+                        <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                            <span class="text-amber-600 font-extrabold block text-sm mb-1">খাস</span>
+                            <p class="text-xs text-slate-500 font-medium">সরকারি মালিকানাধীন খাস জমি।</p>
+                        </div>
+                        <div class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                            <span class="text-indigo-600 font-extrabold block text-sm mb-1">ভি পি 'ক'</span>
+                            <p class="text-xs text-slate-500 font-medium">অর্পিত সম্পত্তি 'ক' তফসিলভুক্ত জমি।</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW SECTION 5: VIEWER MANAGEMENT -->
+            <main id="view-viewer-management" class="main-view hidden flex-1 overflow-y-auto p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <h1 class="text-2xl font-black text-slate-900">এক্সেস কন্ট্রোল ও রোলস</h1>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-xs">
+                        <p class="text-slate-600 font-medium">ব্যবহারকারীদের ভিউয়ার এক্সেস ও রিড-অনলি অনুমতি পর্যালোচনা।</p>
+                        <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-slate-800">ভিউয়ার এক্সেস লেভেল</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">শুধু তথ্য প্রদর্শন ও এক্সপোর্ট করার অনুমতিপ্রাপ্ত।</p>
+                            </div>
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-md">সক্রিয়</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW SECTION 6: DASHBOARD -->
+            <main id="view-dashboard" class="main-view hidden flex-1 overflow-y-auto p-6 lg:p-8">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <h1 class="text-2xl font-black text-slate-900">ড্যাশবোর্ড সামারি</h1>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">মোট রেকর্ডসমূহ</p>
+                            <p id="totalRecordsCount" class="text-3xl font-black text-brand-600 mt-2">০</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">ইউনিয়ন ভূমি অফিস</p>
+                            <p id="totalOfficesCount" class="text-3xl font-black text-indigo-600 mt-2">০</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">নিবন্ধিত মৌজা</p>
+                            <p id="totalMouzasCount" class="text-3xl font-black text-emerald-600 mt-2">০</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="viewModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200">
+                <h3 class="text-sm font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-file-contract text-brand-600 mr-2"></i>
+                    জমির বিবরণী বিস্তারিত
+                </h3>
+                <button onclick="closeModal('viewModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-3 text-xs" id="viewModalContent">
+            </div>
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 text-right">
+                <button onclick="closeModal('viewModal')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition">
+                    বন্ধ করুন
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="recordModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden p-6">
+            <div class="flex justify-between items-center mb-5">
+                <h3 id="recordModalTitle" class="text-sm font-bold text-slate-800">ভূমি রেকর্ড সংযোজন</h3>
+                <button onclick="closeModal('recordModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+            
+            <form onsubmit="saveRecord(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="editRecordId">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">ক্রমিক নং</label>
+                        <input type="text" id="inputSlNo" required placeholder="উদাহরণ: ১৩" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">সাবেক দাগ</label>
+                        <input type="text" id="inputSabek" required placeholder="উদাহরণ: ১২৩৪" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">হাল দাগ</label>
+                        <input type="text" id="inputHalDag" required placeholder="উদাহরণ: ৫৬৭৮" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">হাল খতিয়ান</label>
+                        <input type="text" id="inputHalKhatian" required placeholder="উদাহরণ: ৮৯০" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">মৌজা</label>
+                    <select id="inputMouza" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium bg-white">
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">ইউনিয়ন ভূমি অফিস</label>
+                    <select id="inputOffice" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium bg-white">
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">জমির ধরন</label>
+                    <select id="inputStatus" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium bg-white">
+                        <option value="খাস">খাস</option>
+                        <option value="ভি পি 'ক'">ভি পি 'ক'</option>
+                        <option value="আপত্তি">আপত্তি</option>
+                        <option value="মামলা চলমান">মামলা চলমান</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('recordModal')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50">বাতিল</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700 shadow-sm">সংরক্ষণ করুন</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-sm w-full p-6 text-center">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-trash-can text-lg"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800">মুছে ফেলার নিশ্চিতকরণ</h3>
+            <p class="text-xs text-slate-500 mt-1 font-medium">আপনি কি সত্যিই এই ভূমি রেকর্ডটি মুছে ফেলতে চান?</p>
+            <div class="flex justify-center gap-2 mt-6">
+                <button onclick="closeModal('deleteModal')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50">বাতিল</button>
+                <button onclick="confirmDeleteRecord()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-sm">মুছে ফেলুন</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addOfficeModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-3">+ নতুন ভূমি অফিস সংযোজন</h3>
+            <input type="text" id="newOfficeName" placeholder="অফিসের নাম লিখুন..." class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-medium mb-4 outline-none focus:ring-2 focus:ring-brand-500/20">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('addOfficeModal')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-600">বাতিল</button>
+                <button onclick="saveNewOffice()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700">সংরক্ষণ করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addMouzaModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-6">
+            <h3 class="text-sm font-bold text-slate-800 mb-3">+ নতুন মৌজা সংযোজন</h3>
+            <input type="text" id="newMouzaName" placeholder="মৌজার নাম লিখুন..." class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-medium mb-4 outline-none focus:ring-2 focus:ring-brand-500/20">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('addMouzaModal')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-600">বাতিল</button>
+                <button onclick="saveNewMouza()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700">সংরক্ষণ করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        let currentUser = null;
+        let recordToDeleteId = null;
+        let landRecords = [];
+
+        let officeList = [
+            'প্রতাপগঞ্জ ইউনিয়ন ভূমি অফিস',
+            'কৃষ্ণনগর ইউনিয়ন ভূমি অফিস',
+            'মানিকপুর ইউনিয়ন ভূমি অফিস',
+            'রূপসদী ইউনিয়ন ভূমি অফিস'
+        ];
+
+        let mouzaList = [
+            'বাঞ্ছারামপুর',
+            'কানাইনগর',
+            'চুনারচর',
+            'চর কল্যাণপুর',
+            'রূপসদী মধ্য পাড়া'
+        ];
+
+        // Ensure Firebase Service Load
+        window.addEventListener('DOMContentLoaded', () => {
+            const checkFirebase = setInterval(() => {
+                if (window.firebaseServices) {
+                    clearInterval(checkFirebase);
+                    initFirebaseApp();
+                }
+            }, 100);
+        });
+
+        function initFirebaseApp() {
+            const { auth, db, onAuthStateChanged, collection, onSnapshot } = window.firebaseServices;
+
+            // Auth State Observer
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // Strict Admin email check
+                    const isAdmin = user.email.trim().toLowerCase() === 'admin@lims.gov.bd';
+                    
+                    currentUser = {
+                        uid: user.uid,
+                        email: user.email,
+                        role: isAdmin ? 'admin' : 'viewer',
+                        title: isAdmin ? 'এডমিন (Admin Session)' : 'ভিউয়ার (Viewer Session)'
+                    };
+
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('appLayout').classList.remove('hidden');
+
+                    const badge = document.getElementById('userRoleBadge');
+                    badge.innerText = currentUser.title;
+                    badge.className = currentUser.role === 'admin' 
+                        ? 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-brand-50 text-brand-700 border border-brand-200/80'
+                        : 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200';
+
+                    populateSelectOptions();
+                    applyRolePermissions();
+                } else {
+                    currentUser = null;
+                    document.getElementById('appLayout').classList.add('hidden');
+                    document.getElementById('loginScreen').classList.remove('hidden');
+                }
+            });
+
+            // Firestore Live Records Sync
+            const recordsRef = collection(db, 'land_records');
+            onSnapshot(recordsRef, (snapshot) => {
+                landRecords = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                filterRecords();
+                updateDashboardCounts();
+            }, (error) => {
+                showToast('Firestore ডেটা লোড করতে ব্যর্থ হয়েছে!', 'error');
+            });
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const err = document.getElementById('loginError');
+            const loginBtn = document.getElementById('loginBtn');
+
+            const { auth, signInWithEmailAndPassword } = window.firebaseServices;
+
+            try {
+                loginBtn.disabled = true;
+                loginBtn.innerText = 'লগইন হচ্ছে...';
+                await signInWithEmailAndPassword(auth, email, password);
+                err.classList.add('hidden');
+                showToast('সফলভাবে লগইন করা হয়েছে!');
+            } catch (error) {
+                document.getElementById('loginErrorText').innerText = "ভুল ইমেইল অথবা পাসওয়ার্ড প্রদান করা হয়েছে।";
+                err.classList.remove('hidden');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerText = 'লগইন করুন';
+            }
+        }
+
+        async function handleLogout() {
+            const { auth, signOut } = window.firebaseServices;
+            try {
+                await signOut(auth);
+                showToast('সেশন সমাপ্ত হয়েছে।');
+            } catch (error) {
+                showToast('লগ আউট ব্যর্থ হয়েছে', 'error');
+            }
+        }
+
+        async function saveRecord(e) {
+            e.preventDefault();
+            if (!currentUser || currentUser.role !== 'admin') return;
+
+            const { db, collection, addDoc, updateDoc, doc } = window.firebaseServices;
+
+            const editId = document.getElementById('editRecordId').value;
+            const recordData = {
+                slNo: document.getElementById('inputSlNo').value.trim(),
+                sabekDag: document.getElementById('inputSabek').value.trim(),
+                halDag: document.getElementById('inputHalDag').value.trim(),
+                halKhatian: document.getElementById('inputHalKhatian').value.trim(),
+                mouza: document.getElementById('inputMouza').value,
+                office: document.getElementById('inputOffice').value,
+                status: document.getElementById('inputStatus').value,
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                if (editId) {
+                    const recordRef = doc(db, 'land_records', editId);
+                    await updateDoc(recordRef, recordData);
+                    showToast('রেকর্ড সফলভাবে হালনাগাদ করা হয়েছে!');
+                } else {
+                    await addDoc(collection(db, 'land_records'), recordData);
+                    showToast('নতুন ভূমি রেকর্ড Firestore-এ সংরক্ষিত হয়েছে!');
+                }
+                closeModal('recordModal');
+            } catch (error) {
+                showToast('ডেটা সংরক্ষণ ব্যর্থ হয়েছে!', 'error');
+            }
+        }
+
+        async function confirmDeleteRecord() {
+            if (!recordToDeleteId || !currentUser || currentUser.role !== 'admin') return;
+
+            const { db, doc, deleteDoc } = window.firebaseServices;
+
+            try {
+                await deleteDoc(doc(db, 'land_records', recordToDeleteId));
+                recordToDeleteId = null;
+                closeModal('deleteModal');
+                showToast('রেকর্ডটি মুছে ফেলা হয়েছে।');
+            } catch (error) {
+                showToast('রেকর্ড মুছতে সমস্যা হয়েছে!', 'error');
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('loginPassword');
+            const toggleIcon = document.getElementById('togglePasswordIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        function downloadExcelTemplate() {
+            const headers = ['ক্রমিক নং', 'সাবেক দাগ', 'হাল দাগ', 'হাল খতিয়ান', 'মৌজা', 'ইউনিয়ন ভূমি অফিস', 'জমির ধরন'];
+            const sampleRows = [
+                ['১৩', '১২৩৪', '৫৬৭৮', '৮৯০', 'বাঞ্ছারামপুর', 'প্রতাপগঞ্জ ইউনিয়ন ভূমি অফিস', 'খাস'],
+                ['১৪', '৫৬৭', '৯১০১', '২৩৪', 'কানাইনগর', 'কৃষ্ণনগর ইউনিয়ন ভূমি অফিস', 'মামলা চলমান']
+            ];
+
+            let csvContent = '\uFEFF';
+            csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+            sampleRows.forEach(row => {
+                csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', 'LIMS_Land_Record_Template.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('স্যাম্পল এক্সেল ফরম্যাট ডাউনলোড করা হয়েছে!');
+        }
+
+        function exportToExcel() {
+            if (landRecords.length === 0) {
+                showToast('এক্সপোর্ট করার জন্য কোনো ডেটা নেই!', 'error');
+                return;
+            }
+
+            const headers = ['ক্রমিক নং', 'সাবেক দাগ', 'হাল দাগ', 'হাল খতিয়ান', 'মৌজা', 'ইউনিয়ন ভূমি অফিস', 'জমির ধরন'];
+            let csvContent = '\uFEFF';
+            csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+
+            landRecords.forEach(item => {
+                const row = [
+                    item.slNo,
+                    item.sabekDag,
+                    item.halDag,
+                    item.halKhatian,
+                    item.mouza,
+                    item.office,
+                    item.status
+                ];
+                csvContent += row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', `LIMS_Land_Records_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('সমস্ত রেকর্ড এক্সেল ফাইল হিসেবে এক্সপোর্ট করা হয়েছে!');
+        }
+
+        function handleExcelImport(event) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('আপনার ফাইল ইমপোর্ট করার অনুমতি নেই!', 'error');
+                return;
+            }
+
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                parseCSVAndImport(text);
+                event.target.value = '';
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        async function parseCSVAndImport(csvText) {
+            const lines = csvText.split(/\r\n|\n/).filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                showToast('ফাইলে কোনো তথ্য পাওয়া যায়নি!', 'error');
+                return;
+            }
+
+            const { db, collection, addDoc } = window.firebaseServices;
+            let addedCount = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                const cells = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
+                const cleanCells = cells.map(c => c.replace(/^"|"$/g, '').trim());
+
+                if (cleanCells.length >= 5) {
+                    const slNo = cleanCells[0] || (landRecords.length + 1).toString();
+                    const sabekDag = cleanCells[1] || '--';
+                    const halDag = cleanCells[2] || '';
+                    const halKhatian = cleanCells[3] || '';
+                    const mouza = cleanCells[4] || 'অন্যান্য';
+                    const office = cleanCells[5] || officeList[0] || 'প্রধান কার্যালয়';
+                    const status = cleanCells[6] || 'খাস';
+
+                    if (halDag) {
+                        await addDoc(collection(db, 'land_records'), {
+                            slNo, sabekDag, halDag, halKhatian, mouza, office, status, createdAt: new Date().toISOString()
+                        });
+                        addedCount++;
+                    }
+                }
+            }
+
+            if (addedCount > 0) {
+                showToast(`${addedCount}টি রেকর্ড Firestore-এ ইমপোর্ট করা হয়েছে!`);
+            } else {
+                showToast('এক্সেল ফাইলের ফরম্যাট সঠিক নয়।', 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-slate-900 text-white' : 'bg-red-600 text-white';
+            
+            toast.className = `animate-toast px-4 py-3 rounded-xl text-xs font-bold shadow-xl flex items-center gap-2 border border-slate-700/50 ${bgClass}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-exclamation'}"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function applyRolePermissions() {
+            const adminOnlyElements = document.querySelectorAll('.admin-only');
+            if (!currentUser || currentUser.role !== 'admin') {
+                adminOnlyElements.forEach(el => el.classList.add('hidden'));
+            } else {
+                adminOnlyElements.forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function renderTable(dataset) {
+            const tbody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+
+            if (dataset.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            dataset.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition border-b border-slate-100 text-xs";
+
+                let statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-50 text-red-600 border border-red-200">আপত্তি</span>';
+                if (item.status === 'মামলা চলমান') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-100 text-red-700 border border-red-300">মামলা চলমান</span>';
+                } else if (item.status === 'খাস') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">খাস</span>';
+                } else if (item.status === 'ভি পি \'ক\'') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">ভি পি \'ক\'</span>';
+                }
+
+                let actionButtons = `
+                    <button onclick="openViewModal('${item.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition border border-slate-200">
+                        View
+                    </button>
+                `;
+
+                if (currentUser && currentUser.role === 'admin') {
+                    actionButtons += `
+                        <button onclick="openRecordModal('edit', '${item.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition border border-slate-200 ml-1">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="promptDeleteRecord('${item.id}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[11px] rounded-lg transition border border-red-200 ml-1">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 text-center font-bold text-slate-500">${item.slNo || ''}</td>
+                    <td class="py-3.5 px-4 text-center text-slate-500">${item.sabekDag || '--'}</td>
+                    <td class="py-3.5 px-4 text-center font-bold text-slate-900">${item.halDag || ''}</td>
+                    <td class="py-3.5 px-4 text-center text-slate-700">${item.halKhatian || ''}</td>
+                    <td class="py-3.5 px-4 text-center text-slate-700 font-semibold">${item.mouza || ''}</td>
+                    <td class="py-3.5 px-4 text-center text-slate-600">${item.office || ''}</td>
+                    <td class="py-3.5 px-4 text-center">${statusBadge}</td>
+                    <td class="py-3.5 px-6 text-center whitespace-nowrap">
+                        ${actionButtons}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterRecords() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const selectedOffice = document.getElementById('officeFilter').value;
+            const selectedType = document.getElementById('typeFilter').value;
+
+            const filtered = landRecords.filter(item => {
+                const matchesQuery = (item.halDag || '').toLowerCase().includes(query) ||
+                                     (item.mouza || '').toLowerCase().includes(query) ||
+                                     (item.halKhatian || '').toLowerCase().includes(query);
+                const matchesOffice = selectedOffice === 'ALL' || item.office === selectedOffice;
+                const matchesType = selectedType === 'ALL' || item.status === selectedType;
+                return matchesQuery && matchesOffice && matchesType;
+            });
+
+            renderTable(filtered);
+        }
+
+        function populateSelectOptions() {
+            const officeFilter = document.getElementById('officeFilter');
+            const inputOffice = document.getElementById('inputOffice');
+            const inputMouza = document.getElementById('inputMouza');
+
+            officeFilter.innerHTML = `<option value="ALL">সকল ভূমি অফিস</option>`;
+            inputOffice.innerHTML = '';
+            officeList.forEach(off => {
+                officeFilter.innerHTML += `<option value="${off}">${off}</option>`;
+                inputOffice.innerHTML += `<option value="${off}">${off}</option>`;
+            });
+
+            inputMouza.innerHTML = '';
+            mouzaList.forEach(m => {
+                inputMouza.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+        }
+
+        function openRecordModal(mode, id = null) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('আপনার শুধু তথ্য দেখার অনুমতি রয়েছে!', 'error');
+                return;
+            }
+
+            const modalTitle = document.getElementById('recordModalTitle');
+            const editId = document.getElementById('editRecordId');
+
+            if (mode === 'add') {
+                modalTitle.innerText = 'নতুন ভূমি রেকর্ড সংযোজন';
+                editId.value = '';
+                document.getElementById('inputSlNo').value = (landRecords.length + 1).toString().padStart(2, '০');
+                document.getElementById('inputSabek').value = '';
+                document.getElementById('inputHalDag').value = '';
+                document.getElementById('inputHalKhatian').value = '';
+            } else if (mode === 'edit' && id) {
+                const item = landRecords.find(r => r.id === id);
+                if (!item) return;
+
+                modalTitle.innerText = 'ভূমি রেকর্ড সম্পাদনা';
+                editId.value = item.id;
+                document.getElementById('inputSlNo').value = item.slNo || '';
+                document.getElementById('inputSabek').value = item.sabekDag || '';
+                document.getElementById('inputHalDag').value = item.halDag || '';
+                document.getElementById('inputHalKhatian').value = item.halKhatian || '';
+                document.getElementById('inputMouza').value = item.mouza || '';
+                document.getElementById('inputOffice').value = item.office || '';
+                document.getElementById('inputStatus').value = item.status || 'খাস';
+            }
+
+            openModal('recordModal');
+        }
+
+        function promptDeleteRecord(id) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('আপনার মুছে ফেলার অনুমতি নেই!', 'error');
+                return;
+            }
+            recordToDeleteId = id;
+            openModal('deleteModal');
+        }
+
+        function openViewModal(id) {
+            const record = landRecords.find(r => r.id === id);
+            if (!record) return;
+
+            const content = document.getElementById('viewModalContent');
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">ক্রমিক নং</span>
+                        <span class="font-extrabold text-slate-800 text-xs">${record.slNo}</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">জমির ধরন</span>
+                        <span class="font-extrabold text-red-600 text-xs">${record.status}</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">সাবেক দাগ</span>
+                        <span class="font-extrabold text-slate-800 text-xs">${record.sabekDag}</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">মৌজা</span>
+                        <span class="font-extrabold text-slate-800 text-xs">${record.mouza}</span>
+                    </div>
+                    <div class="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">হাল দাগ</span>
+                        <span class="font-extrabold text-slate-900 text-xs">${record.halDag}</span>
+                    </div>
+                    <div class="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">হাল খতিয়ান</span>
+                        <span class="font-extrabold text-slate-900 text-xs">${record.halKhatian}</span>
+                    </div>
+                    <div class="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] font-bold text-slate-400 block uppercase">ইউনিয়ন ভূমি অফিস</span>
+                        <span class="font-extrabold text-slate-900 text-xs">${record.office}</span>
+                    </div>
+                </div>
+            `;
+            openModal('viewModal');
+        }
+
+        function renderOfficeListUI() {
+            const ul = document.getElementById('officeListUI');
+            ul.innerHTML = '';
+            officeList.forEach((off, idx) => {
+                let deleteBtn = (currentUser && currentUser.role === 'admin')
+                    ? `<button onclick="deleteOffice(${idx})" class="text-red-500 hover:text-red-700 text-xs ml-3"><i class="fa-solid fa-trash-can"></i></button>`
+                    : '';
+                ul.innerHTML += `
+                    <li class="py-3 flex justify-between items-center">
+                        <span class="text-slate-800 font-semibold">${idx+1}. ${off}</span>
+                        <div class="flex items-center">
+                            <span class="text-[10px] px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md font-bold">সক্রিয়</span>
+                            ${deleteBtn}
+                        </div>
+                    </li>`;
+            });
+        }
+
+        function deleteOffice(idx) {
+            officeList.splice(idx, 1);
+            populateSelectOptions();
+            renderOfficeListUI();
+            updateDashboardCounts();
+            showToast('ভূমি অফিস অপসারণ করা হয়েছে।');
+        }
+
+        function saveNewOffice() {
+            const val = document.getElementById('newOfficeName').value.trim();
+            if (val) {
+                officeList.push(val);
+                document.getElementById('newOfficeName').value = '';
+                closeModal('addOfficeModal');
+                populateSelectOptions();
+                switchView('office-list');
+                updateDashboardCounts();
+                showToast('নতুন ভূমি অফিস যোগ হয়েছে!');
+            }
+        }
+
+        function renderMouzaListUI() {
+            const ul = document.getElementById('mouzaListUI');
+            ul.innerHTML = '';
+            mouzaList.forEach((mz, idx) => {
+                let deleteBtn = (currentUser && currentUser.role === 'admin')
+                    ? `<button onclick="deleteMouza(${idx})" class="text-red-500 hover:text-red-700 text-xs ml-3"><i class="fa-solid fa-trash-can"></i></button>`
+                    : '';
+                ul.innerHTML += `
+                    <li class="py-3 flex justify-between items-center">
+                        <span class="text-slate-800 font-semibold">${idx+1}. ${mz}</span>
+                        <div class="flex items-center">
+                            <span class="text-[10px] px-2 py-0.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-md font-bold">নিবন্ধিত</span>
+                            ${deleteBtn}
+                        </div>
+                    </li>`;
+            });
+        }
+
+        function deleteMouza(idx) {
+            mouzaList.splice(idx, 1);
+            populateSelectOptions();
+            renderMouzaListUI();
+            updateDashboardCounts();
+            showToast('মৌজা অপসারণ করা হয়েছে।');
+        }
+
+        function saveNewMouza() {
+            const val = document.getElementById('newMouzaName').value.trim();
+            if (val) {
+                mouzaList.push(val);
+                document.getElementById('newMouzaName').value = '';
+                closeModal('addMouzaModal');
+                populateSelectOptions();
+                switchView('mouza-list');
+                updateDashboardCounts();
+                showToast('নতুন মৌজা যোগ করা হয়েছে!');
+            }
+        }
+
+        function switchView(viewKey, element) {
+            document.querySelectorAll('.main-view').forEach(view => view.classList.add('hidden'));
+            const activeView = document.getElementById(`view-${viewKey}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            document.querySelectorAll('.sub-nav-item, .nav-single').forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white', 'font-semibold');
+            });
+
+            if (element) {
+                element.classList.add('bg-brand-600', 'text-white', 'font-semibold');
+            }
+
+            if (viewKey === 'office-list') renderOfficeListUI();
+            if (viewKey === 'mouza-list') renderMouzaListUI();
+        }
+
+        function toggleMenu(menuId, arrowId) {
+            const menu = document.getElementById(menuId);
+            const arrow = document.getElementById(arrowId);
+            if (menu.classList.contains('max-h-0')) {
+                menu.classList.remove('max-h-0', 'opacity-0');
+                menu.classList.add('max-h-96', 'opacity-100');
+                arrow.classList.remove('-rotate-90');
+            } else {
+                menu.classList.remove('max-h-96', 'opacity-100');
+                menu.classList.add('max-h-0', 'opacity-0');
+                arrow.classList.add('-rotate-90');
+            }
+        }
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        function openAddOfficeModal() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('আপনার অনুমতি নেই!', 'error');
+                return;
+            }
+            openModal('addOfficeModal');
+        }
+
+        function openAddMouzaModal() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('আপনার অনুমতি নেই!', 'error');
+                return;
+            }
+            openModal('addMouzaModal');
+        }
+
+        function updateDashboardCounts() {
+            document.getElementById('totalRecordsCount').innerText = landRecords.length.toString().padStart(2, '০');
+            document.getElementById('totalOfficesCount').innerText = officeList.length.toString().padStart(2, '০');
+            document.getElementById('totalMouzasCount').innerText = mouzaList.length.toString().padStart(2, '০');
+        }
+
+        let sidebarCollapsed = false;
+        function toggleSidebarMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const texts = document.querySelectorAll('.sidebar-text');
+            sidebarCollapsed = !sidebarCollapsed;
+
+            if (sidebarCollapsed) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-16');
+                texts.forEach(t => t.classList.add('hidden'));
+            } else {
+                sidebar.classList.remove('w-16');
+                sidebar.classList.add('w-64');
+                texts.forEach(t => t.classList.remove('hidden'));
+            }
+        }
+
+        function refreshData() {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('animate-spin');
+            setTimeout(() => {
+                icon.classList.remove('animate-spin');
+                filterRecords();
+                showToast('ডেটা রিফ্রেশ হয়েছে!');
+            }, 500);
+        }
+
+        function openSupportModal() {
+            showToast('LIMS হেল্পলাইন: ১৬১২২');
+        }
+
+        // Global Event Attachments to prevent inline execution bugs
+        window.handleLogin = handleLogin;
+        window.handleLogout = handleLogout;
+        window.togglePasswordVisibility = togglePasswordVisibility;
+        window.switchView = switchView;
+        window.toggleMenu = toggleMenu;
+        window.openRecordModal = openRecordModal;
+        window.saveRecord = saveRecord;
+        window.promptDeleteRecord = promptDeleteRecord;
+        window.confirmDeleteRecord = confirmDeleteRecord;
+        window.openViewModal = openViewModal;
+        window.openAddOfficeModal = openAddOfficeModal;
+        window.saveNewOffice = saveNewOffice;
+        window.deleteOffice = deleteOffice;
+        window.openAddMouzaModal = openAddMouzaModal;
+        window.saveNewMouza = saveNewMouza;
+        window.deleteMouza = deleteMouza;
+        window.closeModal = closeModal;
+        window.downloadExcelTemplate = downloadExcelTemplate;
+        window.exportToExcel = exportToExcel;
+        window.handleExcelImport = handleExcelImport;
+        window.filterRecords = filterRecords;
+        window.toggleSidebarMenu = toggleSidebarMenu;
+        window.refreshData = refreshData;
+        window.openSupportModal = openSupportModal;
+    </script>
+</body>
+</html>
