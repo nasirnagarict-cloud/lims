@@ -629,6 +629,7 @@
         let currentUser = null;
         let recordToDeleteId = null;
         let landRecords = [];
+        let unsubscribeFirestore = null;
 
         let officeList = [
             'প্রতাপগঞ্জ ইউনিয়ন ভূমি অফিস',
@@ -682,24 +683,32 @@
 
                     populateSelectOptions();
                     applyRolePermissions();
+
+                    // Firestore-এ ডাটা রিড করার অনুমতি পাওয়ার পরই শুধু listener চালু করা হবে
+                    const recordsRef = collection(db, 'land_records');
+                    if (unsubscribeFirestore) unsubscribeFirestore(); // আগের কোনো লিসেনার থাকলে তা বন্ধ রাখা
+                    
+                    unsubscribeFirestore = onSnapshot(recordsRef, (snapshot) => {
+                        landRecords = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        filterRecords();
+                        updateDashboardCounts();
+                    }, (error) => {
+                        console.error('Firestore Error:', error);
+                        showToast('Firestore ডাটা লোড করতে ব্যর্থ হয়েছে!', 'error');
+                    });
+
                 } else {
                     currentUser = null;
+                    if (unsubscribeFirestore) {
+                        unsubscribeFirestore();
+                        unsubscribeFirestore = null;
+                    }
                     document.getElementById('appLayout').classList.add('hidden');
                     document.getElementById('loginScreen').classList.remove('hidden');
                 }
-            });
-
-            // Firestore Live Records Sync
-            const recordsRef = collection(db, 'land_records');
-            onSnapshot(recordsRef, (snapshot) => {
-                landRecords = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                filterRecords();
-                updateDashboardCounts();
-            }, (error) => {
-                showToast('Firestore ডেটা লোড করতে ব্যর্থ হয়েছে!', 'error');
             });
         }
 
